@@ -1,6 +1,6 @@
 # 🚀 FactCheck Deployment Guide
 
-Hướng dẫn chi tiết để deploy FactCheck application lên Firebase.
+Hướng dẫn chi tiết để deploy FactCheck application với Firebase Auth đã được thống nhất.
 
 ## 📋 Prerequisites
 
@@ -20,13 +20,19 @@ git --version
 ### 2. Firebase Project Setup
 1. Tạo Firebase project tại [Firebase Console](https://console.firebase.google.com)
 2. Enable các services:
-   - **Authentication** (Email/Password)
-   - **Firestore Database**
-   - **Cloud Functions**
-   - **Hosting**
+   - **Authentication** (Email/Password) - **BẮT BUỘC**
+   - **Firestore Database** - **BẮT BUỘC**
+   - **Cloud Functions** - **BẮT BUỘC**
+   - **Hosting** - **BẮT BUỘC**
    - **Cloud Storage** (optional)
 
-### 3. Service Account Setup
+### 3. Firebase Authentication Setup
+1. Vào **Authentication** > **Sign-in method**
+2. Enable **Email/Password** provider
+3. Cấu hình **Authorized domains** (thêm domain production của bạn)
+4. Tùy chọn: Enable **Email verification** trong **Templates**
+
+### 4. Service Account Setup (Cho Backend)
 1. Vào **Project Settings** > **Service Accounts**
 2. Click **Generate new private key**
 3. Download JSON file và lưu an toàn
@@ -34,42 +40,52 @@ git --version
 
 ## 🛠️ Environment Configuration
 
-### 1. Server Environment (.env)
-```bash
-# Copy example file
-cp server/.env.example server/.env
-```
-
-Cập nhật `server/.env`:
-```env
-# Firebase Configuration
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY_ID=your-private-key-id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour-private-key\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-FIREBASE_CLIENT_ID=your-client-id
-
-# JWT Secret (generate strong secret)
-JWT_SECRET=your-super-secret-jwt-key
-
-# Email Configuration (Gmail)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-gmail-app-password
-
-# Production URLs
-FRONTEND_URL=https://your-project.web.app
-```
-
-### 2. Firebase Configuration
-Cập nhật `.firebaserc`:
+### 1. Firebase Project Configuration
+Cập nhật `.firebaserc` với project ID của bạn:
 ```json
 {
   "projects": {
     "default": "your-project-id"
   }
 }
+```
+
+### 2. Client Firebase Configuration
+Cập nhật `client/src/config/firebase.js` với Firebase config của bạn:
+```javascript
+const firebaseConfig = {
+  apiKey: "your-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
+};
+```
+
+### 3. Server Environment (.env) - CHỈ CẦN CHO BACKEND SYNC
+```bash
+# Copy example file (nếu có)
+cp server/.env.example server/.env
+```
+
+Cập nhật `server/.env` (chỉ cần cho backend sync, không cần cho authentication):
+```env
+# Firebase Configuration (cho Admin SDK)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY_ID=your-private-key-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour-private-key\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=your-client-id
+
+# Production URLs
+FRONTEND_URL=https://your-project.web.app
+
+# Optional: Email Configuration (nếu cần gửi email từ backend)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-gmail-app-password
 ```
 
 ## 🔧 Pre-deployment Setup

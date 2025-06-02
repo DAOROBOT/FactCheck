@@ -1,11 +1,12 @@
 @echo off
-echo 🚀 Starting FactCheck deployment...
+echo 🚀 Starting FactCheck deployment with Firebase Auth...
 
 REM Check if Firebase CLI is installed
 firebase --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Firebase CLI is not installed. Please install it first:
     echo npm install -g firebase-tools
+    echo firebase login
     pause
     exit /b 1
 )
@@ -19,11 +20,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check if .env file exists for server
+echo [SUCCESS] Firebase CLI is ready!
+
+REM Check if .firebaserc exists
+if not exist ".firebaserc" (
+    echo [WARNING] .firebaserc not found. Please create it with your project ID.
+    echo Example:
+    echo {
+    echo   "projects": {
+    echo     "default": "your-project-id"
+    echo   }
+    echo }
+    pause
+)
+
+REM Check if .env file exists for server (optional for Firebase Auth)
 if not exist "server\.env" (
-    echo [WARNING] Server .env file not found. Creating from example...
-    copy "server\.env.example" "server\.env"
-    echo [WARNING] Please update server\.env with your actual configuration
+    echo [INFO] Server .env file not found. This is optional for Firebase Auth.
+    echo [INFO] Create server\.env only if you need backend data sync.
 )
 
 REM Install server dependencies
@@ -112,12 +126,19 @@ echo [INFO] Getting deployment info...
 firebase hosting:channel:list
 
 echo.
-echo [SUCCESS] ✅ FactCheck has been deployed successfully!
+echo [SUCCESS] ✅ FactCheck with Firebase Auth has been deployed successfully!
 echo.
 echo [INFO] Next steps:
-echo 1. Update your environment variables in Firebase Functions config
-echo 2. Test all features in the deployed environment
-echo 3. Monitor logs: firebase functions:log
-echo 4. Check hosting: firebase hosting:channel:list
+echo 1. Test authentication features (register/login/logout)
+echo 2. Verify Firebase Auth is working in Firebase Console
+echo 3. Test all features in the deployed environment
+echo 4. Monitor logs: firebase functions:log
+echo 5. Check hosting: firebase hosting:channel:list
+echo.
+echo [INFO] Firebase Auth features available:
+echo - Email/Password authentication
+echo - Automatic email verification
+echo - Password reset
+echo - Secure API authentication with Firebase ID tokens
 
 pause

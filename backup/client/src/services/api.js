@@ -34,10 +34,12 @@ api.interceptors.response.use(
   }
 );
 
-// Auth API endpoints
+// Auth API endpoints - Firebase Auth handles authentication
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  login: (email, password) => api.post('/auth/login', { email, password }),
+  // Sync user data to backend after Firebase Auth registration
+  syncRegister: (idToken, userData) => api.post('/auth/register', { idToken, ...userData }),
+  // Sync user data to backend after Firebase Auth login
+  syncLogin: (idToken) => api.post('/auth/login', { idToken }),
   verifyEmail: (token) => api.post('/auth/verify-email', { token }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),

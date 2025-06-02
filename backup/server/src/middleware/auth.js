@@ -15,55 +15,47 @@ const authenticateToken = async (req, res, next) => {
     // Verify Firebase ID token
     const decodedToken = await auth.verifyIdToken(token);
 
-    // Check if user exists in Firestore
+    // Get user data from Firestore
     const userDoc = await db.collection(collections.USERS).doc(decodedToken.uid).get();
 
-    let userData = null;
     if (userDoc.exists) {
-      userData = userDoc.data();
+      const userData = userDoc.data();
+      req.user = {
+        userId: decodedToken.uid,
+        email: decodedToken.email,
+        emailVerified: decodedToken.email_verified,
+        ...userData
+      };
     } else {
-      // Create user document if it doesn't exist
-      userData = {
+      // Create user document if it doesn't exist (first time login)
+      const userData = {
         email: decodedToken.email,
         firstName: decodedToken.name?.split(' ')[0] || '',
-        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
+        lastName: decodedToken.name?.split(' ')[1] || '',
         isVerified: decodedToken.email_verified,
         createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        stats: {
+          linksChecked: 0
+        }
       };
 
       await db.collection(collections.USERS).doc(decodedToken.uid).set(userData);
-    }
 
-    // Add user info to request
-    req.user = {
-      userId: decodedToken.uid,
-      email: decodedToken.email,
-      emailVerified: decodedToken.email_verified,
-      ...userData
-    };
+      req.user = {
+        userId: decodedToken.uid,
+        email: decodedToken.email,
+        emailVerified: decodedToken.email_verified,
+        ...userData
+      };
+    }
 
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-
-    if (error.code === 'auth/id-token-expired') {
-      return res.status(401).json({
-        error: 'Token expired',
-        code: 'TOKEN_EXPIRED'
-      });
-    }
-
-    if (error.code === 'auth/id-token-revoked') {
-      return res.status(401).json({
-        error: 'Token revoked',
-        code: 'TOKEN_REVOKED'
-      });
-    }
-
-    return res.status(401).json({
-      error: 'Invalid token',
-      code: 'INVALID_TOKEN'
+    console.error('Token verification error:', error);
+    return res.status(403).json({
+      error: 'Invalid or expired token',
+      code: 'TOKEN_INVALID'
     });
   }
 };

@@ -27,52 +27,55 @@ const app = express();
 app.use(cors);
 app.use(express.json());
 
-// Basic API routes for demo
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+// Firebase Auth middleware
+const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-// Simple auth middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Access token required" });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET || "your-secret-key", (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Invalid token" });
+    if (!token) {
+      return res.status(401).json({ error: "Access token required" });
     }
-    req.user = user;
+
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = {
+      userId: decodedToken.uid,
+      email: decodedToken.email,
+      emailVerified: decodedToken.email_verified
+    };
     next();
-  });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(403).json({ error: "Invalid token" });
+  }
 };
 
-// Auth routes
+// Auth routes - Firebase Auth handles authentication
 app.post("/auth/register", async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { idToken, firstName, lastName } = req.body;
 
-    // Check if user exists
-    const existingUser = await db.collection("users")
-      .where("email", "==", email.toLowerCase())
-      .get();
-
-    if (!existingUser.empty) {
-      return res.status(400).json({ error: "Email already registered" });
+    if (!idToken) {
+      return res.status(400).json({ error: "Firebase ID token required" });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // Create user
+    // Check if user already exists
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+
+    if (userDoc.exists) {
+      return res.status(400).json({ error: "User already registered" });
+    }
+
+    // Create user document
     const userData = {
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      firstName,
-      lastName,
-      isVerified: true, // Skip email verification for demo
+      email: decodedToken.email,
+      firstName: firstName || decodedToken.name?.split(" ")[0] || "",
+      lastName: lastName || decodedToken.name?.split(" ")[1] || "",
+      isVerified: decodedToken.email_verified,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       stats: {
@@ -80,61 +83,68 @@ app.post("/auth/register", async (req, res) => {
       }
     };
 
-    const userRef = await db.collection("users").add(userData);
+    await db.collection("users").doc(decodedToken.uid).set(userData);
 
     res.status(201).json({
-      message: "Registration successful",
-      userId: userRef.id
+      message: "User data synced successfully",
+      userId: decodedToken.uid
     });
 
   } catch (error) {
-    logger.error("Registration error:", error);
-    res.status(500).json({ error: "Registration failed" });
+    logger.error("Registration sync error:", error);
+    res.status(500).json({ error: "Registration sync failed" });
   }
 });
 
 app.post("/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { idToken } = req.body;
 
-    // Find user
-    const userQuery = await db.collection("users")
-      .where("email", "==", email.toLowerCase())
-      .get();
-
-    if (userQuery.empty) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    if (!idToken) {
+      return res.status(400).json({ error: "Firebase ID token required" });
     }
 
-    const userDoc = userQuery.docs[0];
-    const userData = userDoc.data();
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, userData.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    // Get or create user document
+    let userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    let userData;
+
+    if (userDoc.exists) {
+      userData = userDoc.data();
+      // Update last login
+      await userDoc.ref.update({
+        lastLoginAt: new Date().toISOString()
+      });
+    } else {
+      // Create user document if it doesn't exist
+      userData = {
+        email: decodedToken.email,
+        firstName: decodedToken.name?.split(" ")[0] || "",
+        lastName: decodedToken.name?.split(" ")[1] || "",
+        isVerified: decodedToken.email_verified,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        stats: {
+          linksChecked: 0
+        }
+      };
+
+      await db.collection("users").doc(decodedToken.uid).set(userData);
     }
-
-    // Generate token
-    const token = jwt.sign(
-      { userId: userDoc.id, email: userData.email },
-      process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "7d" }
-    );
 
     res.json({
-      token,
+      message: "Login successful",
       user: {
-        id: userDoc.id,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName
+        id: decodedToken.uid,
+        ...userData
       }
     });
-
   } catch (error) {
-    logger.error("Login error:", error);
-    res.status(500).json({ error: "Login failed" });
+    logger.error("Login sync error:", error);
+    res.status(500).json({ error: "Login sync failed" });
   }
 });
 

@@ -4,41 +4,37 @@ const authController = require('../controllers/authController');
 const { validateRequest, schemas } = require('../middleware/validation');
 
 // @route   POST /api/auth/register
-// @desc    Register new user
+// @desc    Sync user data after Firebase Auth registration
 // @access  Public
-router.post('/register', 
-  validateRequest(schemas.register),
+router.post('/register',
   authController.register
 );
 
 // @route   POST /api/auth/login
-// @desc    Login user
+// @desc    Sync user data after Firebase Auth login
 // @access  Public
-router.post('/login', 
-  validateRequest(schemas.login),
+router.post('/login',
   authController.login
 );
 
 // @route   POST /api/auth/verify-email
-// @desc    Verify user email
+// @desc    Email verification info (handled by Firebase Auth)
 // @access  Public
-router.post('/verify-email', 
+router.post('/verify-email',
   authController.verifyEmail
 );
 
 // @route   POST /api/auth/forgot-password
-// @desc    Send password reset email
+// @desc    Password reset info (handled by Firebase Auth)
 // @access  Public
-router.post('/forgot-password', 
-  validateRequest(schemas.forgotPassword),
+router.post('/forgot-password',
   authController.forgotPassword
 );
 
 // @route   POST /api/auth/reset-password
-// @desc    Reset user password
+// @desc    Password reset info (handled by Firebase Auth)
 // @access  Public
-router.post('/reset-password', 
-  validateRequest(schemas.resetPassword),
+router.post('/reset-password',
   authController.resetPassword
 );
 
