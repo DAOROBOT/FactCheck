@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { db, collections } = require('../config/firebase');
+const { db, collections } = require('../config/firebase-emulator');
 const emailService = require('../services/emailService');
 
 class AuthController {

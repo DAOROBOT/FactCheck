@@ -1,4 +1,4 @@
-const { db, collections } = require('../config/firebase');
+const { db, collections } = require('../config/firebase-emulator');
 
 class UserController {
   // Get user profile

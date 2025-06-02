@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { linkAPI } from '../services/api';
 import { Search, ExternalLink, Calendar, User, Globe, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import styled from 'styled-components';
 import toast from 'react-hot-toast';
@@ -266,11 +265,37 @@ const CheckLinkPage = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const response = await linkAPI.checkLink(data.url);
-      setResult(response.data.result);
+      // Mock response for demo purposes
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+
+      const mockResult = {
+        url: data.url,
+        credibilityScore: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
+        metadata: {
+          title: 'Sample Article Title',
+          domain: new URL(data.url).hostname,
+          publishDate: new Date().toISOString(),
+          author: 'Sample Author'
+        },
+        summary: 'This is a demo analysis. The actual fact-checking functionality would analyze the content, sources, and credibility indicators to provide a comprehensive assessment.',
+        sources: [
+          {
+            name: 'Reliable News Source',
+            url: 'https://example.com/source1',
+            credibility: 'High'
+          },
+          {
+            name: 'Secondary Source',
+            url: 'https://example.com/source2',
+            credibility: 'Medium'
+          }
+        ]
+      };
+
+      setResult(mockResult);
       toast.success('Link checked successfully!');
     } catch (error) {
-      const message = error.response?.data?.error || 'Failed to check link';
+      const message = 'Failed to check link';
       toast.error(message);
     } finally {
       setIsLoading(false);

@@ -92,52 +92,74 @@ backup/client/
 - **Lucide React**: Icons
 - **React Hot Toast**: Notifications
 
-## 🚀 Cài đặt và Chạy
+## 🚀 Quick Start
 
 ### Prerequisites:
-- Node.js 16+
+- Node.js 16+ và npm 8+
+- Firebase CLI (`npm install -g firebase-tools`)
 - Firebase project với Firestore enabled
 - Email service (Gmail với App Password)
 
-### Backend Setup:
+### 🛠️ Development Setup
 
-1. **Cài đặt dependencies:**
+1. **Clone và setup:**
 ```bash
-cd backup/server
-npm install
+git clone <repository-url>
+cd backup
+npm run setup
 ```
 
 2. **Cấu hình environment:**
 ```bash
-cp .env.example .env
-# Chỉnh sửa .env với thông tin Firebase và email
+# Cập nhật server/.env với thông tin Firebase và email
+cp server/.env.example server/.env
+# Chỉnh sửa server/.env với thông tin thực tế
 ```
 
-3. **Chạy server:**
+3. **Khởi động development:**
 ```bash
-# Development
 npm run dev
-
-# Production
-npm start
 ```
 
-Server sẽ chạy tại `http://localhost:5000`
-
-### Frontend Setup:
-
-1. **Cài đặt dependencies:**
+Hoặc khởi động từng service riêng:
 ```bash
-cd backup/client
-npm install
+# Terminal 1: Firebase Emulators
+npm run emulators
+
+# Terminal 2: Backend Server
+npm run server
+
+# Terminal 3: Frontend
+npm run client
 ```
 
-2. **Chạy client:**
+### 🌐 Access URLs:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Firebase Emulator UI**: http://localhost:4000
+- **Firestore Emulator**: http://localhost:8080
+
+### 📦 Production Deployment
+
+1. **Build và deploy:**
 ```bash
-npm start
+npm run deploy
 ```
 
-Client sẽ chạy tại `http://localhost:3000`
+2. **Hoặc deploy từng phần:**
+```bash
+# Build client
+npm run build
+
+# Deploy Firestore rules
+firebase deploy --only firestore
+
+# Deploy Functions
+firebase deploy --only functions
+
+# Deploy Hosting
+firebase deploy --only hosting
+```
 
 ## 🔧 Cấu hình
 

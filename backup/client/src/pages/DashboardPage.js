@@ -1,7 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from 'react-query';
-import { userAPI } from '../services/api';
 import { Search, BarChart3, Clock, TrendingUp, ExternalLink } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -217,27 +215,41 @@ const EmptyState = styled.div`
 `;
 
 const DashboardPage = () => {
-  const { data: dashboardData, isLoading, error } = useQuery(
-    'dashboard',
-    userAPI.getDashboard,
-    {
-      refetchOnWindowFocus: false,
+  // Mock data for demo purposes
+  const dashboardData = {
+    data: {
+      user: {
+        firstName: 'Demo User'
+      },
+      stats: {
+        totalLinksChecked: 15,
+        linksThisWeek: 3,
+        averageCredibilityScore: 78
+      },
+      recentLinks: [
+        {
+          id: '1',
+          url: 'https://example.com/news1',
+          metadata: {
+            title: 'Sample News Article 1',
+            domain: 'example.com'
+          },
+          credibilityScore: 85,
+          checkedAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          url: 'https://example.com/news2',
+          metadata: {
+            title: 'Sample News Article 2',
+            domain: 'example.com'
+          },
+          credibilityScore: 72,
+          checkedAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ]
     }
-  );
-
-  if (isLoading) {
-    return <LoadingSpinner fullScreen text="Loading dashboard..." />;
-  }
-
-  if (error) {
-    return (
-      <DashboardContainer>
-        <div className="card">
-          <p>Error loading dashboard data. Please try again.</p>
-        </div>
-      </DashboardContainer>
-    );
-  }
+  };
 
   const { user, stats, recentLinks } = dashboardData?.data || {};
 
