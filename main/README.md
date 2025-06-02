@@ -17,7 +17,7 @@ FactCheck là một ứng dụng web để kiểm tra độ tin cậy của thô
 
 ### Backend (Express.js)
 ```
-backup/server/
+main/server/
 ├── src/
 │   ├── app.js                 # Main application file
 │   ├── config/
@@ -44,7 +44,7 @@ backup/server/
 
 ### Frontend (React)
 ```
-backup/client/
+main/client/
 ├── src/
 │   ├── components/
 │   │   ├── Navbar.js         # Navigation component
