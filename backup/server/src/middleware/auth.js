@@ -95,7 +95,27 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Middleware to require email verification
+const requireEmailVerification = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+
+  if (!req.user.emailVerified) {
+    return res.status(403).json({
+      error: 'Email verification required. Please verify your email address to access this feature.',
+      code: 'EMAIL_NOT_VERIFIED'
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   authenticateToken,
-  optionalAuth
+  optionalAuth,
+  requireEmailVerification
 };

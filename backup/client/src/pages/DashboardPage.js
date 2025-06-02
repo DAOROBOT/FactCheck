@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, BarChart3, Clock, TrendingUp, ExternalLink } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
+import EmailVerificationBanner from '../components/EmailVerificationBanner';
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -215,6 +216,8 @@ const EmptyState = styled.div`
 `;
 
 const DashboardPage = () => {
+  const [showVerificationBanner, setShowVerificationBanner] = useState(true);
+
   // Mock data for demo purposes
   const dashboardData = {
     data: {
@@ -255,6 +258,12 @@ const DashboardPage = () => {
 
   return (
     <DashboardContainer>
+      {showVerificationBanner && (
+        <EmailVerificationBanner
+          onDismiss={() => setShowVerificationBanner(false)}
+        />
+      )}
+
       <DashboardHeader>
         <WelcomeTitle>Welcome back, {user?.firstName}!</WelcomeTitle>
         <WelcomeSubtitle>Here's your fact-checking activity overview</WelcomeSubtitle>

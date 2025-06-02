@@ -1,17 +1,21 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
+import { ThemeProvider } from './context/ThemeContext';
+import ModernNavigation from './components/ModernNavigation';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ModernRegisterPage from './pages/ModernRegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import CheckLinkPage from './pages/CheckLinkPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import EmailVerificationRequiredPage from './pages/EmailVerificationRequiredPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import EmailVerifiedRoute from './components/EmailVerifiedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
@@ -22,26 +26,28 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <Navbar />
-      <main>
-        <Routes>
-          {/* Public routes */}
-          <Route 
-            path="/" 
-            element={user ? <Navigate to="/dashboard" /> : <HomePage />} 
-          />
-          <Route 
-            path="/login" 
-            element={user ? <Navigate to="/dashboard" /> : <LoginPage />} 
-          />
-          <Route 
-            path="/register" 
-            element={user ? <Navigate to="/dashboard" /> : <RegisterPage />} 
-          />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+    <ThemeProvider>
+      <div className="App min-h-screen bg-white dark:bg-gray-900 transition-colors">
+        <ModernNavigation />
+        <main>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/"
+              element={user ? <Navigate to="/dashboard" /> : <HomePage />}
+            />
+            <Route
+              path="/login"
+              element={user ? <Navigate to="/dashboard" /> : <LoginPage />}
+            />
+            <Route
+              path="/register"
+              element={user ? <Navigate to="/dashboard" /> : <ModernRegisterPage />}
+            />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/email-verification-required" element={<EmailVerificationRequiredPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected routes */}
           <Route 
@@ -52,13 +58,13 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/check-link" 
+          <Route
+            path="/check-link"
             element={
-              <ProtectedRoute>
+              <EmailVerifiedRoute>
                 <CheckLinkPage />
-              </ProtectedRoute>
-            } 
+              </EmailVerifiedRoute>
+            }
           />
           <Route 
             path="/profile" 
@@ -73,7 +79,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }
 

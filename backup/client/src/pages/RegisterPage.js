@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 
 const RegisterContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -169,8 +170,12 @@ const schema = yup.object({
     .required('Email is required'),
   password: yup
     .string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+    .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
+    .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
+    .matches(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số')
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt')
+    .required('Mật khẩu là bắt buộc'),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref('password')], 'Passwords must match')
@@ -187,10 +192,16 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors }
   } = useForm({
     resolver: yupResolver(schema)
   });
+
+  // Watch password value for strength indicator
+  const passwordValue = watch('password', '');
+
+  // Force component update for Vietnamese interface
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -198,7 +209,13 @@ const RegisterPage = () => {
       const { confirmPassword, ...userData } = data;
       const result = await registerUser(userData);
       if (result.success) {
-        navigate('/login');
+        // Navigate to login with a message about email verification
+        navigate('/login', {
+          state: {
+            message: 'Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản trước khi đăng nhập.',
+            type: 'info'
+          }
+        });
       }
     } finally {
       setIsLoading(false);
@@ -209,8 +226,8 @@ const RegisterPage = () => {
     <RegisterContainer>
       <RegisterCard>
         <RegisterHeader>
-          <RegisterTitle>Create Account</RegisterTitle>
-          <RegisterSubtitle>Join FactCheck to start verifying information</RegisterSubtitle>
+          <RegisterTitle>Tạo Tài Khoản Mới</RegisterTitle>
+          <RegisterSubtitle>Tham gia FactCheck để bắt đầu xác minh thông tin</RegisterSubtitle>
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -221,7 +238,7 @@ const RegisterPage = () => {
               </InputIcon>
               <Input
                 type="text"
-                placeholder="First name"
+                placeholder="Họ"
                 error={errors.firstName}
                 {...register('firstName')}
               />
@@ -236,7 +253,7 @@ const RegisterPage = () => {
               </InputIcon>
               <Input
                 type="text"
-                placeholder="Last name"
+                placeholder="Tên"
                 error={errors.lastName}
                 {...register('lastName')}
               />
@@ -252,7 +269,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Nhập email của bạn"
               error={errors.email}
               {...register('email')}
             />
@@ -267,7 +284,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Create password"
+              placeholder="Tạo mật khẩu"
               error={errors.password}
               {...register('password')}
             />
@@ -280,6 +297,10 @@ const RegisterPage = () => {
             {errors.password && (
               <ErrorMessage>{errors.password.message}</ErrorMessage>
             )}
+            <PasswordStrengthIndicator
+              password={passwordValue}
+              showRequirements={true}
+            />
           </InputGroup>
 
           <InputGroup>
@@ -288,7 +309,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Confirm password"
+              placeholder="Xác nhận mật khẩu"
               error={errors.confirmPassword}
               {...register('confirmPassword')}
             />
@@ -307,17 +328,17 @@ const RegisterPage = () => {
             {isLoading ? (
               <>
                 <div className="spinner" style={{ width: '1rem', height: '1rem' }} />
-                Creating account...
+                Đang tạo tài khoản...
               </>
             ) : (
-              'Create Account'
+              'Tạo Tài Khoản'
             )}
           </SubmitButton>
         </Form>
 
         <RegisterFooter>
-          Already have an account?{' '}
-          <FooterLink to="/login">Sign in here</FooterLink>
+          Đã có tài khoản?{' '}
+          <FooterLink to="/login">Đăng nhập tại đây</FooterLink>
         </RegisterFooter>
       </RegisterCard>
     </RegisterContainer>

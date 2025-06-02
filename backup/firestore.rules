@@ -16,6 +16,11 @@ service cloud.firestore {
              request.auth.token.email_verified == true;
     }
 
+    function isVerifiedUser() {
+      return isAuthenticated() &&
+             request.auth.token.email_verified == true;
+    }
+
     // Users collection - users can only access their own data
     match /users/{userId} {
       allow read, write: if isOwner(userId);
@@ -25,11 +30,11 @@ service cloud.firestore {
                        request.resource.data.email == request.auth.token.email;
     }
 
-    // Links collection - users can only access their own links
+    // Links collection - users can only access their own links and must have verified email
     match /links/{linkId} {
-      allow read, write: if isAuthenticated() &&
+      allow read, write: if isVerifiedUser() &&
                             resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() &&
+      allow create: if isVerifiedUser() &&
                        request.resource.data.userId == request.auth.uid &&
                        request.resource.data.keys().hasAll(['url', 'userId']);
     }

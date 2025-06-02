@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Info } from 'lucide-react';
 import styled from 'styled-components';
+import toast from 'react-hot-toast';
 
 const LoginContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -158,8 +159,22 @@ const schema = yup.object({
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Show message from registration if available
+  useEffect(() => {
+    if (location.state?.message) {
+      if (location.state.type === 'info') {
+        toast.success(location.state.message);
+      } else {
+        toast.error(location.state.message);
+      }
+      // Clear the state to prevent showing the message again
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const {
     register,
@@ -174,6 +189,8 @@ const LoginPage = () => {
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
+        // Navigate to dashboard regardless of email verification status
+        // EmailVerificationBanner will handle showing verification prompt
         navigate('/dashboard');
       }
     } finally {

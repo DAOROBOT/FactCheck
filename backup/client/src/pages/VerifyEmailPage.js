@@ -73,9 +73,11 @@ const VerifyEmailPage = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    
-    if (!token) {
+    // Firebase Auth uses different parameter names for email verification
+    const mode = searchParams.get('mode');
+    const actionCode = searchParams.get('oobCode');
+
+    if (mode !== 'verifyEmail' || !actionCode) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
       return;
@@ -83,10 +85,10 @@ const VerifyEmailPage = () => {
 
     const verify = async () => {
       try {
-        const result = await verifyEmail(token);
+        const result = await verifyEmail(actionCode);
         if (result.success) {
           setStatus('success');
-          setMessage('Your email has been successfully verified! You can now log in to your account.');
+          setMessage('Your email has been successfully verified! You can now access all features.');
         } else {
           setStatus('error');
           setMessage(result.error || 'Email verification failed. Please try again.');

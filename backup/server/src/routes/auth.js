@@ -24,6 +24,13 @@ router.post('/verify-email',
   authController.verifyEmail
 );
 
+// @route   POST /api/auth/resend-verification
+// @desc    Resend email verification (handled by Firebase Auth client)
+// @access  Public
+router.post('/resend-verification',
+  authController.resendVerificationEmail
+);
+
 // @route   POST /api/auth/forgot-password
 // @desc    Password reset info (handled by Firebase Auth)
 // @access  Public

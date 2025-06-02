@@ -145,6 +145,48 @@ class AuthController {
     }
   }
 
+  // Resend verification email
+  async resendVerificationEmail(req, res, next) {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({
+          error: 'Firebase ID token required',
+          code: 'TOKEN_MISSING'
+        });
+      }
+
+      // Verify Firebase ID token
+      const decodedToken = await auth.verifyIdToken(idToken);
+
+      // Check if user already verified
+      if (decodedToken.email_verified) {
+        return res.status(400).json({
+          error: 'Email is already verified',
+          code: 'ALREADY_VERIFIED'
+        });
+      }
+
+      // Note: Firebase Admin SDK doesn't have a direct method to resend verification emails
+      // This would typically be handled on the frontend using Firebase Auth client SDK
+      res.json({
+        message: 'Verification email resend is handled by Firebase Auth client SDK. Please use the frontend resend functionality.',
+        userId: decodedToken.uid
+      });
+
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      if (error.code?.startsWith('auth/')) {
+        return res.status(401).json({
+          error: 'Invalid Firebase token',
+          code: 'INVALID_TOKEN'
+        });
+      }
+      next(error);
+    }
+  }
+
   // Password reset is handled by Firebase Auth
   async forgotPassword(req, res, next) {
     try {
