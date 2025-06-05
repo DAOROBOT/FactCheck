@@ -100,63 +100,116 @@ class UserController {
    */
   async getDashboard(req, res, next) {
     try {
-      // TODO: Extract user ID from authenticated request
-      // const userId = req.user.userId;
+      const userId = req.user.userId; // Assumes authentication middleware sets req.user
 
-      // TODO: Get user data from database
-      // const userDoc = await db.collection(collections.USERS).doc(userId).get();
-      // const userData = userDoc.data();
+      // Fetch user document
+      const userDoc = await db.collection(collections.USERS).doc(userId).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const userData = userDoc.data();
 
-      // TODO: Get recent links checked by user
-      // const recentLinksQuery = await db.collection(collections.LINKS)
-      //   .where('userId', '==', userId)
-      //   .orderBy('checkedAt', 'desc')
-      //   .limit(10)
-      //   .get();
+      // Fetch user's recent link checks (last 10)
+      const linksSnapshot = await db.collection(collections.LINKS)
+        .where('userId', '==', userId)
+        .orderBy('checkedAt', 'desc')
+        .limit(10)
+        .get();
 
-      // TODO: Map query results to array
-      // const recentLinks = recentLinksQuery.docs.map(doc => ({
-      //   id: doc.id,
-      //   ...doc.data()
-      // }));
+      const recentLinks = linksSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
-      // TODO: Calculate statistics
-      // const totalLinksChecked = recentLinksQuery.size;
-      // const averageCredibility = recentLinks.length > 0
-      //   ? recentLinks.reduce((sum, link) => sum + link.credibilityScore, 0) / recentLinks.length
-      //   : 0;
+      // Calculate statistics
+      const totalLinksChecked = userData.stats?.linksChecked || 0;
+      const avgCredibility = recentLinks.length
+        ? (recentLinks.reduce((sum, l) => sum + (l.credibilityScore || 0), 0) / recentLinks.length)
+        : 0;
 
-      // TODO: Get weekly statistics
-      // const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      // const weeklyLinksQuery = await db.collection(collections.LINKS)
-      //   .where('userId', '==', userId)
-      //   .where('checkedAt', '>=', oneWeekAgo.toISOString())
-      //   .get();
+      // Weekly statistics for the last 7 days (including today)
+      const now = new Date();
+      const weekAgo = new Date(now);
+      weekAgo.setDate(now.getDate() - 6);
 
-      // TODO: Format and return dashboard data
-      res.json({
-        message: 'Sample dashboard data - implement actual dashboard logic',
-        user: {
-          id: 'sample-user-id',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com'
-        },
-        stats: {
-          totalLinksChecked: 25,
-          linksThisWeek: 5,
-          averageCredibilityScore: 7.8
-        },
-        recentLinks: [
-          {
-            id: 'sample-link-1',
-            url: 'https://example.com/news-article',
-            credibilityScore: 8.5,
-            checkedAt: new Date().toISOString()
+      // Fetch all links in the last 7 days
+      const weekLinksSnapshot = await db.collection(collections.LINKS)
+        .where('userId', '==', userId)
+        .where('checkedAt', '>=', weekAgo.toISOString())
+        .get();
+
+      // Prepare weekly stats structure
+      const weeklyStats = {};
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(weekAgo);
+        day.setDate(weekAgo.getDate() + i);
+        const key = day.toISOString().slice(0, 10); // YYYY-MM-DD
+        weeklyStats[key] = {
+          count: 0,
+          avgCredibility: 0,
+          maliciousCount: 0,
+          safeCount: 0,
+          percentMalicious: 0,
+          percentSafe: 0
+        };
+      }
+
+      // Aggregate stats per day
+      weekLinksSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const dayKey = data.checkedAt?.slice(0, 10);
+        if (weeklyStats[dayKey]) {
+          weeklyStats[dayKey].count += 1;
+          weeklyStats[dayKey].avgCredibility += data.credibilityScore || 0;
+          if (data.isMalicious) {
+            weeklyStats[dayKey].maliciousCount += 1;
+          } else {
+            weeklyStats[dayKey].safeCount += 1;
           }
-        ]
+        }
       });
 
+      // Finalize averages and percentages
+      Object.keys(weeklyStats).forEach(key => {
+        const day = weeklyStats[key];
+        if (day.count > 0) {
+          day.avgCredibility = +(day.avgCredibility / day.count).toFixed(2);
+          day.percentMalicious = +(day.maliciousCount / day.count * 100).toFixed(2);
+          day.percentSafe = +(day.safeCount / day.count * 100).toFixed(2);
+        } else {
+          day.avgCredibility = 0;
+          day.percentMalicious = 0;
+          day.percentSafe = 0;
+        }
+      });
+
+      // Login times (assuming lastLoginAt and createdAt are tracked)
+      const loginTimes = {
+        lastLoginAt: userData.lastLoginAt || null,
+        createdAt: userData.createdAt || null
+      };
+
+      // Feature usage
+      const featureUsage = userData.stats?.featureUsage || {};
+
+      // Settings changes
+      const settingsChanges = userData.settingsHistory || [];
+
+      res.json({
+        success: true,
+        message: 'Dashboard data retrieved successfully',
+        data: {
+          stats: {
+            totalLinksChecked,
+            avgCredibilityScore: avgCredibility
+          },
+          weeklyStats,
+          loginTimes,
+          featureUsage,
+          settingsChanges,
+          recentLinks
+        }
+      });
     } catch (error) {
       next(error);
     }
