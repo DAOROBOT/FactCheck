@@ -55,33 +55,39 @@ class UserController {
    */
   async updateProfile(req, res, next) {
     try {
-      // TODO: Extract user ID from authenticated request
-      // const userId = req.user.userId;
+      const userId = req.user.userId;
 
-      // TODO: Extract profile data from request body
-      // const { firstName, lastName, bio, avatar } = req.body;
+      // Extract profile data from request body
+      const { firstName, lastName, bio, avatar } = req.body;
 
-      // TODO: Prepare update data with timestamp
-      // const updateData = {
-      //   updatedAt: new Date().toISOString()
-      // };
+      // Prepare update data with timestamp
+      const updateData = {
+        updatedAt: new Date().toISOString()
+      };
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (bio !== undefined) updateData['profile.bio'] = bio;
+      if (avatar !== undefined) updateData['profile.avatar'] = avatar;
 
-      // TODO: Add fields to update data if provided
-      // if (firstName !== undefined) updateData.firstName = firstName;
-      // if (lastName !== undefined) updateData.lastName = lastName;
-      // if (bio !== undefined) updateData['profile.bio'] = bio;
-      // if (avatar !== undefined) updateData['profile.avatar'] = avatar;
+      // Update user document in database
+      await db.collection(collections.USERS).doc(userId).update(updateData);
 
-      // TODO: Update user document in database
-      // await db.collection(collections.USERS).doc(userId).update(updateData);
+      // Fetch and return updated user data (excluding sensitive info)
+      const userDoc = await db.collection(collections.USERS).doc(userId).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({
+          error: 'User not found',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+      const userData = userDoc.data();
+      const { password, ...userProfile } = userData;
 
-      // TODO: Fetch and return updated user data
       res.json({
-        message: 'Sample response - implement actual profile update',
-        user: {
-          id: 'sample-user-id',
-          firstName: 'Updated Name',
-          lastName: 'Updated Last Name'
+        message: 'Profile updated successfully',
+        success: true,
+        data: {
+          user: userProfile
         }
       });
 
